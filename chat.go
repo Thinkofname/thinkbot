@@ -22,7 +22,7 @@ func (b *Bot) handleMessage(sender User, target, message string) {
 		go func() {
 			err := b.checkSpigotVersion(sender, target, matches)
 			if err != nil {
-				b.reply(sender, target, fmt.Sprintf("Sorry I had an issue checking your version, %s", err))
+				b.Reply(sender, target, fmt.Sprintf("Sorry I had an issue checking your version, %s", err))
 			}
 		}()
 		return
@@ -53,7 +53,7 @@ func (b *Bot) checkSpigotVersion(sender User, target string, info []string) erro
 	}
 
 	if distance == 0 {
-		b.reply(sender, target, "You have the latest version")
+		b.Reply(sender, target, "You have the latest version")
 		return nil
 	}
 
@@ -61,7 +61,7 @@ func (b *Bot) checkSpigotVersion(sender User, target string, info []string) erro
 	if distance != 1 {
 		s = "s"
 	}
-	b.reply(sender, target, fmt.Sprintf(
+	b.Reply(sender, target, fmt.Sprintf(
 		"You are behind by %d version%s, please rerun BuildTools %s",
 		distance,
 		s,
@@ -70,7 +70,7 @@ func (b *Bot) checkSpigotVersion(sender User, target string, info []string) erro
 	return nil
 }
 
-func (b *Bot) reply(sender User, target, message string) {
+func (b *Bot) Reply(sender User, target, message string) {
 	if target[0] == '#' {
 		b.SendMessage(target, fmt.Sprintf("%s: %s", sender.Nickname, message))
 	} else {
