@@ -157,3 +157,32 @@ func NewJoin(channel string) Join {
 func (j Join) Channel() string {
 	return j.arguments[0]
 }
+
+type Mode struct {
+	unhandledMessage
+}
+
+func NewMode(target, mode string) Mode {
+	return Mode{
+		unhandledMessage{
+			command:   "MODE",
+			arguments: []string{target, mode},
+		},
+	}
+}
+
+func (m Mode) Target() string {
+	return m.arguments[0]
+}
+
+func (m Mode) Mode() string {
+	return m.arguments[1]
+}
+
+func (m Mode) User() string {
+	return m.arguments[2]
+}
+
+func (m Mode) HasUser() bool {
+	return len(m.arguments) >= 3
+}

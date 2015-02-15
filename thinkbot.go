@@ -3,6 +3,7 @@ package thinkbot
 import (
 	"github.com/thinkofdeath/thinkbot/irc"
 	"log"
+	"strings"
 )
 
 type Bot struct {
@@ -14,7 +15,9 @@ type Bot struct {
 	writeChan chan irc.Message
 	funcChan  chan func()
 
-	channels []string
+	channels      []string
+	commandPrefix string
+	modes         map[rune]struct{}
 }
 
 func NewBot(server string, port uint16, username string) (*Bot, error) {
@@ -23,12 +26,14 @@ func NewBot(server string, port uint16, username string) (*Bot, error) {
 		return nil, err
 	}
 	b := &Bot{
-		client:    c,
-		Events:    make(chan Event, 100),
-		writeChan: make(chan irc.Message, 100),
-		funcChan:  make(chan func(), 100),
-		username:  username,
-		channels:  []string{},
+		client:        c,
+		Events:        make(chan Event, 100),
+		writeChan:     make(chan irc.Message, 100),
+		funcChan:      make(chan func(), 100),
+		username:      username,
+		channels:      []string{},
+		commandPrefix: "+",
+		modes:         map[rune]struct{}{},
 	}
 	go b.run()
 	return b, nil
@@ -77,19 +82,39 @@ func (b *Bot) run() {
 				if ctcp {
 					msg = msg[1 : len(msg)-1]
 				}
-				if m.Target()[0] == '#' {
-					b.Events <- ChannelMessage{
-						Sender:  parseUser(m.Sender()),
-						Channel: m.Target(),
-						Message: msg,
-						CTCP:    ctcp,
-					}
+				isCommand := strings.HasPrefix(msg, b.commandPrefix)
+
+				if !isCommand {
+					b.handleMessage(parseUser(m.Sender()), m.Target(), m.Message())
 				} else {
-					b.Events <- PrivateMessage{
-						Sender:  parseUser(m.Sender()),
-						Target:  m.Target(),
-						Message: msg,
-						CTCP:    ctcp,
+					go b.handleCommand(
+						parseUser(m.Sender()),
+						m.Target(),
+						m.Message()[len(b.commandPrefix):],
+					)
+				}
+			case irc.Notice:
+			// Notice
+			case irc.Mode:
+				// TODO Track others + channels
+				if m.Target() == b.username {
+					state := '#'
+					for _, r := range m.Mode() {
+						switch r {
+						case '-':
+							state = '-'
+						case '+':
+							state = '+'
+						default:
+							if state == '#' {
+								panic("Invalid mode!")
+							}
+							if state == '+' {
+								b.modes[r] = struct{}{}
+							} else {
+								delete(b.modes, r)
+							}
+						}
 					}
 				}
 			default:
@@ -134,5 +159,13 @@ func (b *Bot) SendMessage(target, message string) {
 }
 
 func (b *Bot) SendCTCP(target, message string) {
-	b.writeChan <- irc.NewPrivateMessage(target, "\x01" + message + "\x01")
+	b.writeChan <- irc.NewPrivateMessage(target, "\x01"+message+"\x01")
+}
+
+func (b *Bot) AddMode(modes ...rune) {
+	b.writeChan <- irc.NewMode(b.username, "+"+string(modes))
+}
+
+func (b *Bot) RemoveMode(modes ...rune) {
+	b.writeChan <- irc.NewMode(b.username, "-"+string(modes))
 }

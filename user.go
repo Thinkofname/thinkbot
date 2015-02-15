@@ -12,6 +12,11 @@ type User struct {
 }
 
 func parseUser(u string) User {
+	if !strings.ContainsRune(u, '!') || !strings.ContainsRune(u, '@') {
+		return User{
+			Nickname: u,
+		}
+	}
 	nick := u[:strings.IndexRune(u, '!')]
 	u = u[len(nick)+1:]
 	ident := u[:strings.IndexRune(u, '@')]

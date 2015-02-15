@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/thinkofdeath/thinkbot"
 	"log"
-	"strings"
 	"time"
 )
 
@@ -22,6 +20,7 @@ func main() {
 			switch event := event.(type) {
 			case thinkbot.Connected:
 				log.Println("Connected")
+				bot.AddMode('B')
 				bot.JoinChannel("#thinkbot")
 			case thinkbot.Stop:
 				if bot.Error() != nil {
@@ -29,19 +28,8 @@ func main() {
 					time.Sleep(5 * time.Second)
 					continue
 				}
-			case thinkbot.ChannelMessage:
-				if !event.CTCP {
-					bot.SendMessage(event.Channel, fmt.Sprintf("\\o/ %s!", event.Sender.Nickname))
-				}
-			case thinkbot.PrivateMessage:
-				if event.CTCP {
-					switch {
-					case strings.HasPrefix(event.Message, "VERSION"):
-						bot.SendCTCP(event.Sender.Nickname, "VERSION Thinkbot v0.banana")
-					}
-				}
 			default:
-				log.Printf("%#v\n", event)
+				log.Printf("Unhandled event: %#v\n", event)
 			}
 		}
 	}

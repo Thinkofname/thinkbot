@@ -60,6 +60,8 @@ func (c *Client) Read() (msg Message, err error) {
 		msg = Join{m}
 	case "privmsg":
 		msg = PrivateMessage{m}
+	case "mode":
+		msg = Mode{m}
 	default:
 		if m.command[0] >= '0' && m.command[0] <= '9' {
 			msg = Reply{m}
