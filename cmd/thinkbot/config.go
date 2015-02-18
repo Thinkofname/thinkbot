@@ -5,15 +5,15 @@ import (
 	"os"
 )
 
-type config struct {
+type botConfig struct {
 	Server   string   `json:"server"`
 	Port     uint16   `json:"port"`
 	Username string   `json:"username"`
 	Channels []string `json:"channels"`
 }
 
-func loadConfig() *config {
-	var config config
+func loadConfig() *botConfig {
+	var config botConfig
 	initDefaults(&config)
 	f, err := os.Open("config.json")
 	if err == nil {
@@ -27,7 +27,7 @@ func loadConfig() *config {
 	return &config
 }
 
-func saveConfig(c *config) {
+func saveConfig(c *botConfig) {
 	f, err := os.Create("config.json")
 	if err != nil {
 		panic(err)
@@ -40,7 +40,7 @@ func saveConfig(c *config) {
 	f.Write(b)
 }
 
-func initDefaults(c *config) {
+func initDefaults(c *botConfig) {
 	c.Server = "irc.example.com"
 	c.Port = 6667
 	c.Username = "BotName"
