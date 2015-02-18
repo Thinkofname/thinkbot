@@ -23,7 +23,6 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"sync"
 )
 
 // Bot contains all the information of the currently
@@ -39,7 +38,6 @@ type Bot struct {
 	Commands command.Registry
 
 	chatHandlers []chatHandler
-	chatLock     sync.RWMutex
 
 	Events    chan Event
 	writeChan chan irc.Message
@@ -52,9 +50,11 @@ type Bot struct {
 	permissionContainer PermissionContainer
 }
 
+type chatHandlerFunc func(b *Bot, sender User, target, message string) error
+
 type chatHandler struct {
 	r *regexp.Regexp
-	f func(b *Bot, sender User, target, message string) error
+	f chatHandlerFunc
 }
 
 // NewBot creates an instance of a bot connecting to the target
@@ -175,15 +175,13 @@ func (b *Bot) run() {
 
 // AddChatHandler adds a handler which is called
 // whenever the passed regexp matches a message
-func (b *Bot) AddChatHandler(r *regexp.Regexp, f func(b *Bot, sender User, target, message string) error) {
-	b.chatLock.Lock()
-	defer b.chatLock.Unlock()
-	b.chatHandlers = append(b.chatHandlers, chatHandler{r, f})
+func (b *Bot) AddChatHandler(r *regexp.Regexp, f chatHandlerFunc) {
+	b.funcChan <- func() {
+		b.chatHandlers = append(b.chatHandlers, chatHandler{r, f})
+	}
 }
 
 func (b *Bot) handleMessage(sender User, target, message string) {
-	b.chatLock.RLock()
-	defer b.chatLock.RUnlock()
 	for _, h := range b.chatHandlers {
 		r, f := h.r, h.f
 		if r.MatchString(message) {
