@@ -22,6 +22,7 @@ import (
 	"strings"
 )
 
+// Message represents a single message from the server.
 type Message interface {
 	Sender() string
 	Command() string
@@ -37,8 +38,11 @@ type unhandledMessage struct {
 }
 
 var (
-	ErrEmptyMessage     = errors.New("Empty message")
-	ErrMalformedMessage = errors.New("Malformed message")
+	// ErrEmptyMessage is returned if the message is empty
+	ErrEmptyMessage = errors.New("empty message")
+	// ErrMalformedMessage is returned if any error occurs when
+	// parsing the message
+	ErrMalformedMessage = errors.New("malformed message")
 )
 
 func parseMessage(line string) (msg unhandledMessage, err error) {
@@ -89,17 +93,14 @@ func parseMessage(line string) (msg unhandledMessage, err error) {
 	return
 }
 
-// The client/server that sent the message
 func (m unhandledMessage) Sender() string {
 	return m.sender
 }
 
-// The message's command
 func (m unhandledMessage) Command() string {
 	return m.command
 }
 
-// The arguments (if any) for this message
 func (m unhandledMessage) Arguments() []string {
 	return m.arguments
 }

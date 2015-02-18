@@ -69,7 +69,7 @@ type versionReply struct {
 }
 
 type versionCommit struct {
-	Id string `json:"id"`
+	ID string `json:"id"`
 }
 
 func getCommitHash(repo string) (string, error) {
@@ -83,5 +83,5 @@ func getCommitHash(repo string) (string, error) {
 	defer resp.Body.Close()
 	var reply versionReply
 	err = json.NewDecoder(resp.Body).Decode(&reply)
-	return reply.Values[0].Id, err
+	return reply.Values[0].ID, err
 }

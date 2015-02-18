@@ -23,6 +23,8 @@ import (
 
 //go:generate stringer -type=ReplyCode
 
+// ReplyCode is a numeric reply that can be sent by the server
+// or client
 type ReplyCode int
 
 // Client-Server
@@ -174,10 +176,12 @@ const (
 	ErrorUsersDontMatch      ReplyCode = 502
 )
 
+// Reply is a message with a numeric command
 type Reply struct {
 	unhandledMessage
 }
 
+// NewReply creates a Reply message with the passed ReplyCode
 func NewReply(code ReplyCode, args ...string) Reply {
 	return Reply{
 		unhandledMessage{
@@ -187,6 +191,7 @@ func NewReply(code ReplyCode, args ...string) Reply {
 	}
 }
 
+// Code returns the ReplyCode for this Reply
 func (r Reply) Code() ReplyCode {
 	i, err := strconv.ParseInt(r.command, 10, 32)
 	if err != nil {

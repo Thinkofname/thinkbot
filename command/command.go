@@ -24,6 +24,12 @@ import (
 	"strings"
 )
 
+// Registry contains information required to store
+// and execute commands
+//
+// ExtraParameters can be set to specify how many
+// extra parameters a command function will have
+// after the caller argument
 type Registry struct {
 	ExtraParameters int
 
@@ -31,7 +37,8 @@ type Registry struct {
 }
 
 var (
-	ErrCommandNotFound = errors.New("Command not found")
+	// ErrCommandNotFound is returned when no matching command was found
+	ErrCommandNotFound = errors.New("command not found")
 )
 
 var quotedStringRegex = regexp.MustCompile(`[^\s"]+|"([^"]*)"`)
@@ -64,7 +71,6 @@ func (r *Registry) Register(desc string, f interface{}) {
 	for _, arg := range args {
 		if strings.HasPrefix(arg, "%") {
 			panic("Unsupported op")
-			continue
 		}
 		current = current.subNode(arg)
 	}

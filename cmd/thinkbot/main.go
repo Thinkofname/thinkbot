@@ -44,6 +44,7 @@ func main() {
 					time.Sleep(5 * time.Second)
 					continue
 				}
+				return
 			default:
 				log.Printf("Unhandled event: %#v\n", event)
 			}

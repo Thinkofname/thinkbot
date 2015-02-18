@@ -22,6 +22,11 @@ import (
 	"strings"
 )
 
+// Bot contains all the information of the currently
+// running bot.
+//
+// Event should be continuously read from and the
+// returned events handled.
 type Bot struct {
 	client   *irc.Client
 	err      error
@@ -36,6 +41,10 @@ type Bot struct {
 	modes         map[rune]struct{}
 }
 
+// NewBot creates an instance of a bot connecting to the target
+// server with the specified username
+//
+// Returns an error if it fails to connect
 func NewBot(server string, port uint16, username string) (*Bot, error) {
 	c, err := irc.NewClient(server, port)
 	if err != nil {
@@ -152,16 +161,21 @@ func (b *Bot) kill() {
 	close(b.Events)
 }
 
-// Returns the error the bot stopped with or nil
+// Error returns the error the bot stopped with or nil
 // if no error has occurred
 func (b *Bot) Error() error {
 	return b.err
 }
 
+// JoinChannel attempts to join the target channel
+//
+// Channel names are generally prefixed with #
 func (b *Bot) JoinChannel(channel string) {
 	b.writeChan <- irc.NewJoin(channel)
 }
 
+// Channels returns the list of channels this bot is currently
+// connected to
 func (b *Bot) Channels() []string {
 	ret := make(chan []string)
 	b.funcChan <- func() {
@@ -170,18 +184,22 @@ func (b *Bot) Channels() []string {
 	return <-ret
 }
 
+// SendMessage sends a message to the target channel or user
 func (b *Bot) SendMessage(target, message string) {
 	b.writeChan <- irc.NewPrivateMessage(target, message)
 }
 
+// SendCTCP sends a CTCP message to the target channel or user
 func (b *Bot) SendCTCP(target, message string) {
 	b.writeChan <- irc.NewPrivateMessage(target, "\x01"+message+"\x01")
 }
 
+// AddMode sets the mode(s) on the bot
 func (b *Bot) AddMode(modes ...rune) {
 	b.writeChan <- irc.NewMode(b.username, "+"+string(modes))
 }
 
+// RemoveMode removes the mode(s) from the bot
 func (b *Bot) RemoveMode(modes ...rune) {
 	b.writeChan <- irc.NewMode(b.username, "-"+string(modes))
 }

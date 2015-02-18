@@ -24,14 +24,16 @@ import (
 	"time"
 )
 
+// Client represents a connection to an irc server
+// as a client
 type Client struct {
 	conn    *net.TCPConn
 	scanner *bufio.Scanner
 }
 
-// Creates a new irc client connecting to the server
-// at the passed address and port. This does not use
-// ssl.
+// NewClient creates a new irc client connecting to
+// the server at the passed address and port. This
+// does not use ssl.
 func NewClient(address string, port uint16) (cli *Client, err error) {
 	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", address, port))
 	if err != nil {
@@ -50,7 +52,7 @@ func NewClient(address string, port uint16) (cli *Client, err error) {
 	return
 }
 
-// Reads a single message from the client
+// Read reads a single message from the server
 func (c *Client) Read() (msg Message, err error) {
 	c.conn.SetReadDeadline(time.Now().Add(time.Second * 240))
 
@@ -90,6 +92,8 @@ func (c *Client) Read() (msg Message, err error) {
 
 var newLine = []byte("\n")
 
+// Write writes a single message to the server as
+// the client
 func (c *Client) Write(msg Message) (err error) {
 	c.conn.SetWriteDeadline(time.Now().Add(time.Second * 240))
 

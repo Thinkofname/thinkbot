@@ -86,6 +86,15 @@ func (b *Bot) checkSpigotVersion(sender User, target string, info []string) erro
 	return nil
 }
 
+// Reply sends a message to the user in the same way
+// the message was sent.
+//
+// If the message was sent in a channel the message
+// will be sent back to that channel with the sender's
+// nickname prefixed.
+//
+// If the message was sent in a private message then
+// this will just reply normally
 func (b *Bot) Reply(sender User, target, message string) {
 	if target[0] == '#' {
 		b.SendMessage(target, fmt.Sprintf("%s: %s", sender.Nickname, message))

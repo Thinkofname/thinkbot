@@ -16,8 +16,15 @@
 
 package thinkbot
 
+// Event is anything that can be returned
+// by the Event channel
 type Event interface{}
 
+// Stop is an event that is sent when the
+// bot is stopped (e.g. disconnected)
 type Stop struct{}
 
+// Connected is an event when the bot considers
+// itself to be fully connected to the server
+// and ready for commands
 type Connected struct{}

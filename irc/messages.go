@@ -16,6 +16,9 @@
 
 package irc
 
+// NewMessage creates a raw irc message from the passed
+// parameters. No checking is done to make sure the message
+// is valid.
 func NewMessage(command string, args ...string) Message {
 	return unhandledMessage{
 		command:   command,
@@ -23,12 +26,14 @@ func NewMessage(command string, args ...string) Message {
 	}
 }
 
-// An irc notice message
+// Notice is a message which should not be replied to
+// via automatic responses
 type Notice struct {
 	unhandledMessage
 }
 
-// Creates a new Notice with the given target and text
+// NewNotice creates a new Notice with the given target
+// and text
 func NewNotice(target, text string) Notice {
 	return Notice{
 		unhandledMessage{
@@ -38,22 +43,23 @@ func NewNotice(target, text string) Notice {
 	}
 }
 
-// Returns the target of this notice
+// Target returns the target of this notice
 func (n Notice) Target() string {
 	return n.arguments[0]
 }
 
-// Returns the text of this notice
-func (n Notice) Text() string {
+// Message returns the message of this notice
+func (n Notice) Message() string {
 	return n.arguments[1]
 }
 
-// An irc nick message
+// Nick is a message used to set or change change
+// your current nickname
 type Nick struct {
 	unhandledMessage
 }
 
-// Creates a new Nick with the given nickname
+// NewNick creates a new Nick with the given nickname
 func NewNick(nickname string) Nick {
 	return Nick{
 		unhandledMessage{
@@ -63,17 +69,19 @@ func NewNick(nickname string) Nick {
 	}
 }
 
-// The nickname of this nick message
+// Nickname returns new/target nickname of this
+// nick message
 func (n Nick) Nickname() string {
 	return n.arguments[0]
 }
 
-// An irc user message
+// User is a message used to register yourself to
+// the server
 type User struct {
 	unhandledMessage
 }
 
-// Creates a new User with the given username and realname
+// NewUser creates a new User with the given username and realname
 func NewUser(username, realname string) User {
 	return User{
 		unhandledMessage{
@@ -83,22 +91,23 @@ func NewUser(username, realname string) User {
 	}
 }
 
-// The username of the User message
+// Username returns the username of the User message
 func (u User) Username() string {
 	return u.arguments[0]
 }
 
-// The realname of the User message
+// Realname returns the realname of the User message
 func (u User) Realname() string {
 	return u.arguments[1]
 }
 
-// An irc ping message
+// Ping is sent by the server to check if the client is still
+// there. It should be replied to by a Pong with the same code
 type Ping struct {
 	unhandledMessage
 }
 
-// Creates a new Ping with the given code
+// NewPing creates a new Ping with the given code
 func NewPing(code string) Ping {
 	return Ping{
 		unhandledMessage{
@@ -108,17 +117,17 @@ func NewPing(code string) Ping {
 	}
 }
 
-// The code of the ping
+// Code returns the code of the ping
 func (p Ping) Code() string {
 	return p.arguments[0]
 }
 
-// An irc pong message
+// Pong is sent as a reply to a Ping message
 type Pong struct {
 	unhandledMessage
 }
 
-// Creates a new Ppng with the given code
+// NewPong creates a new Ppng with the given code
 func NewPong(code string) Pong {
 	return Pong{
 		unhandledMessage{
@@ -128,16 +137,19 @@ func NewPong(code string) Pong {
 	}
 }
 
-// The code of the ppng
+// Code retruns the code of the pong
 func (p Pong) Code() string {
 	return p.arguments[0]
 }
 
-// An irc privmsg message
+// PrivateMessage is a message sent by the server or
+// by the client. This can target a user or a channel
 type PrivateMessage struct {
 	unhandledMessage
 }
 
+// NewPrivateMessage returns a private message with the
+// given target and message
 func NewPrivateMessage(target, msg string) PrivateMessage {
 	return PrivateMessage{
 		unhandledMessage{
@@ -147,20 +159,24 @@ func NewPrivateMessage(target, msg string) PrivateMessage {
 	}
 }
 
-// Returns the target of the message
+// Target returns the target of the message
 func (p PrivateMessage) Target() string {
 	return p.arguments[0]
 }
 
-// Returns the message
+// Message returns the message
 func (p PrivateMessage) Message() string {
 	return p.arguments[1]
 }
 
+// Join is a message sent by the server to tell the client
+// they joined a channel. A client can send this message
+// to join a channel
 type Join struct {
 	unhandledMessage
 }
 
+// NewJoin creates a Join message for the passed channel
 func NewJoin(channel string) Join {
 	return Join{
 		unhandledMessage{
@@ -170,14 +186,21 @@ func NewJoin(channel string) Join {
 	}
 }
 
+// Channel returns the channel this join is for
 func (j Join) Channel() string {
 	return j.arguments[0]
 }
 
+// Mode is a message sent by the server when a user's mode is
+// changed, a channel's mode is changed or a flag on the channel
+// changed. The client can send this to change a mode on a user
+// or a channel
 type Mode struct {
 	unhandledMessage
 }
 
+// NewMode creates a Mode message for the passed target
+// and mode string
 func NewMode(target, mode string) Mode {
 	return Mode{
 		unhandledMessage{
@@ -187,18 +210,24 @@ func NewMode(target, mode string) Mode {
 	}
 }
 
+// Target returns the target of this Mode message
 func (m Mode) Target() string {
 	return m.arguments[0]
 }
 
+// Mode returns the mode string of this mode Message
 func (m Mode) Mode() string {
 	return m.arguments[1]
 }
 
-func (m Mode) User() string {
+// Extra returns the extra argument for this mode.
+// (optional)
+func (m Mode) Extra() string {
 	return m.arguments[2]
 }
 
-func (m Mode) HasUser() bool {
+// HasExtra returns whether this mode message has
+// extra data
+func (m Mode) HasExtra() bool {
 	return len(m.arguments) >= 3
 }

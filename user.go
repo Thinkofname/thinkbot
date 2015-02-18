@@ -21,6 +21,10 @@ import (
 	"strings"
 )
 
+// User contains basic information on a single
+// irc user.
+//
+// Ident/Host may not always be known
 type User struct {
 	Nickname string
 	Ident    string
