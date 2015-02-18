@@ -6,8 +6,6 @@
 //
 //     commandname sub1 sub2 sub...
 //
-// BUG(Think): Complex commands are NYI
-//
 // Complex commands can be created by using % to specify
 // arguments. The type of the argument will be inferred
 // from the type over the passed function pointer. Extra
@@ -18,3 +16,5 @@
 // between arguments with the exception of whitespace contained
 // within quotes (") as that will be treated as a single argument
 package command
+
+// BUG(Think): Complex commands are NYI
