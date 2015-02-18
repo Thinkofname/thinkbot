@@ -18,6 +18,7 @@ package main
 
 import (
 	"github.com/thinkofdeath/thinkbot"
+	"github.com/thinkofdeath/thinkbot/spigot"
 	"log"
 	"time"
 )
@@ -25,7 +26,9 @@ import (
 func main() {
 	for {
 		log.Println("Connecting...")
-		bot, err := thinkbot.NewBot("irc.spi.gt", 6667, "ThinkTest")
+		bot, err := thinkbot.NewBot("irc.spi.gt", 6667, "ThinkTest", func(b *thinkbot.Bot) {
+			spigot.Init(b)
+		})
 		if err != nil {
 			log.Println(err)
 			time.Sleep(5 * time.Second)

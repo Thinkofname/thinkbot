@@ -14,34 +14,23 @@
  * limitations under the License.
  */
 
-package thinkbot
+package spigot
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/thinkofdeath/thinkbot"
 	"github.com/thinkofdeath/thinkbot/command"
 	"net/http"
 )
 
-var commands = command.Registry{
-	// User and target parameters
-	ExtraParameters: 2,
-}
-
-func init() {
+func initCommands(commands *command.Registry) {
 	commands.Register("latest", latest)
 	commands.Register("latest spigot", latest)
 	commands.Register("latest bukkit", latestBukkit)
 }
 
-func (b *Bot) handleCommand(user User, target, msg string) {
-	err := commands.Execute(b, msg, user, target)
-	if err != nil {
-		b.Reply(user, target, err.Error())
-	}
-}
-
-func latest(b *Bot, user User, target string) {
+func latest(b *thinkbot.Bot, user thinkbot.User, target string) {
 	hash, err := getCommitHash("spigot")
 	if err != nil {
 		b.Reply(user, target, fmt.Sprintf("Failed to get the latest version: %s", err))
@@ -55,7 +44,7 @@ func latest(b *Bot, user User, target string) {
 	b.Reply(user, target, fmt.Sprintf("The latest is git-Spigot-%s-%s", hash[0:7], bhash[0:7]))
 }
 
-func latestBukkit(b *Bot, user User, target string) {
+func latestBukkit(b *thinkbot.Bot, user thinkbot.User, target string) {
 	hash, err := getCommitHash("craftbukkit")
 	if err != nil {
 		b.Reply(user, target, fmt.Sprintf("Failed to get the latest version: %s", err))

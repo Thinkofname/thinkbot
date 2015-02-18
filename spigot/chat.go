@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package thinkbot
+package spigot
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/thinkofdeath/thinkbot"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -29,23 +30,16 @@ var (
 	bukkitVersionMatcher = regexp.MustCompile(`(?i)git-Bukkit-([0-9a-f]{7})`)
 )
 
-func (b *Bot) handleMessage(sender User, target, message string) {
-	matches := spigotVersionMatcher.FindStringSubmatch(message)
-	if matches == nil {
-		matches = bukkitVersionMatcher.FindStringSubmatch(message)
-	}
-	if matches != nil {
-		go func() {
-			err := b.checkSpigotVersion(sender, target, matches)
-			if err != nil {
-				b.Reply(sender, target, fmt.Sprintf("Sorry I had an issue checking your version, %s", err))
-			}
-		}()
-		return
-	}
+func initChat(b *thinkbot.Bot) {
+	b.AddChatHandler(spigotVersionMatcher, func(b *thinkbot.Bot, sender thinkbot.User, target, message string) error {
+		return checkSpigotVersion(b, sender, target, spigotVersionMatcher.FindStringSubmatch(message))
+	})
+	b.AddChatHandler(bukkitVersionMatcher, func(b *thinkbot.Bot, sender thinkbot.User, target, message string) error {
+		return checkSpigotVersion(b, sender, target, bukkitVersionMatcher.FindStringSubmatch(message))
+	})
 }
 
-func (b *Bot) checkSpigotVersion(sender User, target string, info []string) error {
+func checkSpigotVersion(b *thinkbot.Bot, sender thinkbot.User, target string, info []string) error {
 	distance := 0
 	extra := ""
 	if len(info) == 3 {
@@ -84,23 +78,6 @@ func (b *Bot) checkSpigotVersion(sender User, target string, info []string) erro
 		extra,
 	))
 	return nil
-}
-
-// Reply sends a message to the user in the same way
-// the message was sent.
-//
-// If the message was sent in a channel the message
-// will be sent back to that channel with the sender's
-// nickname prefixed.
-//
-// If the message was sent in a private message then
-// this will just reply normally
-func (b *Bot) Reply(sender User, target, message string) {
-	if target[0] == '#' {
-		b.SendMessage(target, fmt.Sprintf("%s: %s", sender.Nickname, message))
-	} else {
-		b.SendMessage(sender.Nickname, message)
-	}
 }
 
 func getDistanceFromLatest(repo, hash string) (int, error) {

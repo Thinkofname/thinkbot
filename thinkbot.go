@@ -17,9 +17,13 @@
 package thinkbot
 
 import (
+	"fmt"
+	"github.com/thinkofdeath/thinkbot/command"
 	"github.com/thinkofdeath/thinkbot/irc"
 	"log"
+	"regexp"
 	"strings"
+	"sync"
 )
 
 // Bot contains all the information of the currently
@@ -32,6 +36,11 @@ type Bot struct {
 	err      error
 	username string
 
+	Commands command.Registry
+
+	chatHandlers []chatHandler
+	chatLock     sync.RWMutex
+
 	Events    chan Event
 	writeChan chan irc.Message
 	funcChan  chan func()
@@ -41,11 +50,19 @@ type Bot struct {
 	modes         map[rune]struct{}
 }
 
+type chatHandler struct {
+	r *regexp.Regexp
+	f func(b *Bot, sender User, target, message string) error
+}
+
 // NewBot creates an instance of a bot connecting to the target
 // server with the specified username
 //
+// The init function is called before any messages/commands
+// are handled to allow for setup
+//
 // Returns an error if it fails to connect
-func NewBot(server string, port uint16, username string) (*Bot, error) {
+func NewBot(server string, port uint16, username string, init func(*Bot)) (*Bot, error) {
 	c, err := irc.NewClient(server, port)
 	if err != nil {
 		return nil, err
@@ -59,7 +76,12 @@ func NewBot(server string, port uint16, username string) (*Bot, error) {
 		channels:      []string{},
 		commandPrefix: "+",
 		modes:         map[rune]struct{}{},
+		Commands: command.Registry{
+			// User and target parameters
+			ExtraParameters: 2,
+		},
 	}
+	init(b)
 	go b.run()
 	return b, nil
 }
@@ -149,6 +171,37 @@ func (b *Bot) run() {
 	}
 }
 
+// AddChatHandler adds a handler which is called
+// whenever the passed regexp matches a message
+func (b *Bot) AddChatHandler(r *regexp.Regexp, f func(b *Bot, sender User, target, message string) error) {
+	b.chatLock.Lock()
+	defer b.chatLock.Unlock()
+	b.chatHandlers = append(b.chatHandlers, chatHandler{r, f})
+}
+
+func (b *Bot) handleMessage(sender User, target, message string) {
+	b.chatLock.RLock()
+	defer b.chatLock.RUnlock()
+	for _, h := range b.chatHandlers {
+		r, f := h.r, h.f
+		if r.MatchString(message) {
+			go func() {
+				if err := f(b, sender, target, message); err != nil {
+					b.Reply(sender, target, err.Error())
+				}
+			}()
+			break
+		}
+	}
+}
+
+func (b *Bot) handleCommand(user User, target, msg string) {
+	err := b.Commands.Execute(b, msg, user, target)
+	if err != nil {
+		b.Reply(user, target, err.Error())
+	}
+}
+
 func (b *Bot) handleReply(r irc.Reply) {
 	switch r.Code() {
 	case irc.ReplyWelcome:
@@ -202,4 +255,21 @@ func (b *Bot) AddMode(modes ...rune) {
 // RemoveMode removes the mode(s) from the bot
 func (b *Bot) RemoveMode(modes ...rune) {
 	b.writeChan <- irc.NewMode(b.username, "-"+string(modes))
+}
+
+// Reply sends a message to the user in the same way
+// the message was sent.
+//
+// If the message was sent in a channel the message
+// will be sent back to that channel with the sender's
+// nickname prefixed.
+//
+// If the message was sent in a private message then
+// this will just reply normally
+func (b *Bot) Reply(sender User, target, message string) {
+	if target[0] == '#' {
+		b.SendMessage(target, fmt.Sprintf("%s: %s", sender.Nickname, message))
+	} else {
+		b.SendMessage(sender.Nickname, message)
+	}
 }
