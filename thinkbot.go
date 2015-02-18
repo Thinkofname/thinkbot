@@ -48,6 +48,8 @@ type Bot struct {
 	channels      []string
 	commandPrefix string
 	modes         map[rune]struct{}
+
+	permissionContainer PermissionContainer
 }
 
 type chatHandler struct {
