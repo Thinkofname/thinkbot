@@ -8,6 +8,7 @@ import (
 )
 
 var commands = command.Registry{
+	// User and target parameters
 	ExtraParameters: 2,
 }
 

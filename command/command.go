@@ -2,6 +2,7 @@ package command
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
@@ -17,7 +18,7 @@ var (
 	ErrCommandNotFound = errors.New("Command not found")
 )
 
-var quotedStringRegex = regexp.MustCompile("[^\\s`]+|`([^`]*)`")
+var quotedStringRegex = regexp.MustCompile(`[^\s"]+|"([^"]*)"`)
 
 func (r *Registry) Register(desc string, f interface{}) {
 	args := strings.Split(desc, " ")
@@ -48,14 +49,26 @@ func (r *Registry) Register(desc string, f interface{}) {
 	current.f = f
 }
 
-func (r *Registry) Execute(caller interface{}, cmd string, extra ...interface{}) error {
+func (r *Registry) Execute(caller interface{}, cmd string, extra ...interface{}) (err error) {
+	// No commands registered
 	if r.root == nil {
 		return ErrCommandNotFound
 	}
+	// Catch and return any errors throw to prevent crashing
+	defer func() {
+		if e := recover(); e != nil {
+			var ok bool
+			err, ok = e.(error)
+			if !ok {
+				err = fmt.Errorf("%v", e)
+			}
+		}
+	}()
+
 
 	parts := quotedStringRegex.FindAllString(cmd, -1)
 	for i, p := range parts {
-		if strings.HasPrefix(p, "`") && strings.HasSuffix(p, "`") {
+		if strings.HasPrefix(p, `"`) && strings.HasSuffix(p, `"`) {
 			parts[i] = p[1 : len(p)-1]
 		}
 	}
@@ -74,10 +87,10 @@ func (r *Registry) Execute(caller interface{}, cmd string, extra ...interface{})
 
 	if current != nil && current.f != nil {
 		f := reflect.ValueOf(current.f)
-		args := make([]reflect.Value, 1 + r.ExtraParameters)
+		args := make([]reflect.Value, 1+r.ExtraParameters)
 		args[0] = reflect.ValueOf(caller)
 		for i, e := range extra {
-			args[1 + i] = reflect.ValueOf(e)
+			args[1+i] = reflect.ValueOf(e)
 		}
 		f.Call(args)
 		return nil
