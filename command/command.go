@@ -36,7 +36,18 @@ var (
 
 var quotedStringRegex = regexp.MustCompile(`[^\s"]+|"([^"]*)"`)
 
+// Register adds the passed function to the command registry
+// using the description to decided on its name and location.
+//
+// f must be a function
+//
+// This is designed to panic instead of returning an error
+// because its intended to be used in init methods and fail
+// early on mistakes
 func (r *Registry) Register(desc string, f interface{}) {
+	if reflect.TypeOf(f).Kind() != reflect.Func {
+		panic("f must be a function")
+	}
 	args := strings.Split(desc, " ")
 
 	if len(args) < 1 {
@@ -65,12 +76,20 @@ func (r *Registry) Register(desc string, f interface{}) {
 	current.f = f
 }
 
+// Execute tries to execute the specified command as the passed
+// caller.
+//
+// Panics if the number of extra arguments doesn't match the
+// amount specified in Registry's ExtraParameters
 func (r *Registry) Execute(caller interface{}, cmd string, extra ...interface{}) (err error) {
-	// No commands registered
+	if len(extra) != r.ExtraParameters {
+		panic("Incorrect number of extra parameters")
+	}
+
 	if r.root == nil {
 		return ErrCommandNotFound
 	}
-	// Catch and return any errors throw to prevent crashing
+	// Catch and return any errors thrown to prevent crashing
 	defer func() {
 		if e := recover(); e != nil {
 			var ok bool
@@ -81,7 +100,9 @@ func (r *Registry) Execute(caller interface{}, cmd string, extra ...interface{})
 		}
 	}()
 
-
+	// Unlike most command systems this supports quoting of
+	// arguments using ". The regex used leaves the quotes
+	// in the resulting string so we go through a strip them
 	parts := quotedStringRegex.FindAllString(cmd, -1)
 	for i, p := range parts {
 		if strings.HasPrefix(p, `"`) && strings.HasSuffix(p, `"`) {
@@ -89,6 +110,10 @@ func (r *Registry) Execute(caller interface{}, cmd string, extra ...interface{})
 		}
 	}
 
+	// Currently we just start at the root node and work our
+	// way through until we hit our command or a dead end.
+	// When complex commands are supported this will have to
+	// change to support rewinding
 	current := r.root
 	pos := 0
 	for pos < len(parts) {
@@ -101,7 +126,12 @@ func (r *Registry) Execute(caller interface{}, cmd string, extra ...interface{})
 		}
 	}
 
+	// Its possible to reach a node which doesn't have
+	// a command assigned (e.g. part of a sub-command)
+	// so we have to check that too
 	if current != nil && current.f != nil {
+		// No checks are preformed on the function here
+		// as they should have been checked in Register
 		f := reflect.ValueOf(current.f)
 		args := make([]reflect.Value, 1+r.ExtraParameters)
 		args[0] = reflect.ValueOf(caller)
