@@ -6,10 +6,15 @@ import (
 )
 
 type botConfig struct {
-	Server   string   `json:"server"`
-	Port     uint16   `json:"port"`
-	Username string   `json:"username"`
-	Channels []string `json:"channels"`
+	Server   string                 `json:"server"`
+	Port     uint16                 `json:"port"`
+	Username string                 `json:"username"`
+	Channels []string               `json:"channels"`
+	Users    map[string]*userConfig `json:"users"`
+}
+
+type userConfig struct {
+	Permissions map[string]bool `json:"permissions"`
 }
 
 func loadConfig() *botConfig {
@@ -45,4 +50,11 @@ func initDefaults(c *botConfig) {
 	c.Port = 6667
 	c.Username = "BotName"
 	c.Channels = []string{"#banana"}
+	c.Users = map[string]*userConfig{
+		"oops.i.broke.thinkofdeath.co.uk": &userConfig{
+			Permissions: map[string]bool{
+				"bot.admin": true,
+			},
+		},
+	}
 }

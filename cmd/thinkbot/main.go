@@ -20,11 +20,17 @@ import (
 	"github.com/thinkofdeath/thinkbot"
 	"github.com/thinkofdeath/thinkbot/spigot"
 	"log"
+	"sync"
 	"time"
 )
 
+var (
+	config     *botConfig
+	configLock sync.RWMutex
+)
+
 func main() {
-	config := loadConfig()
+	config = loadConfig()
 	saveConfig(config)
 
 	for {
@@ -35,6 +41,7 @@ func main() {
 			config.Username,
 			func(b *thinkbot.Bot) {
 				spigot.Init(b)
+				b.SetPermissionContainer(configPermissions{})
 			},
 		)
 		if err != nil {
@@ -48,9 +55,11 @@ func main() {
 			case thinkbot.Connected:
 				log.Println("Connected")
 				bot.AddMode('B')
+				configLock.RLock()
 				for _, c := range config.Channels {
 					bot.JoinChannel(c)
 				}
+				configLock.RUnlock()
 			case thinkbot.Stop:
 				if bot.Error() != nil {
 					log.Println(bot.Error())
