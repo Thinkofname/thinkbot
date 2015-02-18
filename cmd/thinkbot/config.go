@@ -51,7 +51,7 @@ func initDefaults(c *botConfig) {
 	c.Username = "BotName"
 	c.Channels = []string{"#banana"}
 	c.Users = map[string]*userConfig{
-		"oops.i.broke.thinkofdeath.co.uk": &userConfig{
+		"oops.i.broke.thinkofdeath.co.uk": {
 			Permissions: map[string]bool{
 				"bot.admin": true,
 			},
