@@ -24,11 +24,19 @@ import (
 )
 
 func main() {
+	config := loadConfig()
+	saveConfig(config)
+
 	for {
 		log.Println("Connecting...")
-		bot, err := thinkbot.NewBot("irc.spi.gt", 6667, "ThinkTest", func(b *thinkbot.Bot) {
-			spigot.Init(b)
-		})
+		bot, err := thinkbot.NewBot(
+			config.Server,
+			config.Port,
+			config.Username,
+			func(b *thinkbot.Bot) {
+				spigot.Init(b)
+			},
+		)
 		if err != nil {
 			log.Println(err)
 			time.Sleep(5 * time.Second)
@@ -40,7 +48,9 @@ func main() {
 			case thinkbot.Connected:
 				log.Println("Connected")
 				bot.AddMode('B')
-				bot.JoinChannel("#thinkbot")
+				for _, c := range config.Channels {
+					bot.JoinChannel(c)
+				}
 			case thinkbot.Stop:
 				if bot.Error() != nil {
 					log.Println(bot.Error())
