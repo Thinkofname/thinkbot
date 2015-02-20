@@ -57,7 +57,7 @@ func (r *Registry) Register(desc string, f interface{}) {
 	}
 	args := strings.Split(desc, " ")
 
-	if len(args) < 1 {
+	if len(args[0]) < 1 {
 		panic("Invalid command desc")
 	}
 
@@ -69,7 +69,7 @@ func (r *Registry) Register(desc string, f interface{}) {
 
 	current := r.root
 	for _, arg := range args {
-		if strings.HasPrefix(arg, "%") {
+		if arg[0] == '%' {
 			panic("Unsupported op")
 		}
 		current = current.subNode(arg)
