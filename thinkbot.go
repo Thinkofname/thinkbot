@@ -83,6 +83,7 @@ func NewBot(server string, port uint16, username string, init func(*Bot)) (*Bot,
 			ExtraParameters: 2,
 		},
 	}
+	b.init()
 	init(b)
 	go b.run()
 	return b, nil
