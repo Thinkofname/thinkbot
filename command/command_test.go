@@ -49,42 +49,30 @@ func TestSubCommands(t *testing.T) {
 }
 
 func TestNonFunction(t *testing.T) {
-	defer func() {
-		if err := recover(); err == nil {
-			t.FailNow()
-		}
-	}()
-
-	r := Registry{}
-	r.Register("test a", "")
+	shouldPanic(t, func() {
+		r := Registry{}
+		r.Register("test a", "")
+	})
 }
 
 func TestInvalidDesc(t *testing.T) {
-	defer func() {
-		if err := recover(); err == nil {
-			t.FailNow()
-		}
-	}()
+	shouldPanic(t, func() {
+		r := Registry{}
+		r.Register("", func(caller string) {
 
-	r := Registry{}
-	r.Register("", func(caller string) {
-
+		})
 	})
 }
 
 func TestDoubleAdd(t *testing.T) {
-	defer func() {
-		if err := recover(); err == nil {
-			t.FailNow()
-		}
-	}()
+	shouldPanic(t, func() {
+		r := Registry{}
+		r.Register("test", func(caller string) {
 
-	r := Registry{}
-	r.Register("test", func(caller string) {
+		})
+		r.Register("test", func(caller string) {
 
-	})
-	r.Register("test", func(caller string) {
-
+		})
 	})
 }
 
@@ -102,21 +90,15 @@ func TestExtraParams(t *testing.T) {
 }
 
 func TestExtraParamsFail(t *testing.T) {
-	defer func() {
-		if err := recover(); err == nil {
-			t.FailNow()
+	shouldPanic(t, func() {
+		r := Registry{
+			ExtraParameters: 2,
 		}
-	}()
-	r := Registry{
-		ExtraParameters: 2,
-	}
-	r.Register("extra", func(caller, a, b string) {
-		if caller != "gopher" ||
-			a != "a" || b != "b" {
+		r.Register("extra", func(caller, a, b string) {
 			t.FailNow()
-		}
+		})
+		r.Execute("gopher", "extra", "a", "b", "c")
 	})
-	checkError(t, r.Execute("gopher", "extra", "a", "b", "c"))
 }
 
 func TestEmpty(t *testing.T) {
@@ -176,4 +158,13 @@ func checkError(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func shouldPanic(t *testing.T, f func()) {
+	defer func() {
+		if err := recover(); err == nil {
+			t.FailNow()
+		}
+	}()
+	f()
 }

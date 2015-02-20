@@ -34,6 +34,8 @@ type Registry struct {
 	ExtraParameters int
 
 	root *commandNode
+
+	typeHandlers map[reflect.Type]TypeHandler
 }
 
 var (
@@ -52,7 +54,12 @@ var quotedStringRegex = regexp.MustCompile(`[^\s"]+|"([^"]*)"`)
 // because its intended to be used in init methods and fail
 // early on mistakes
 func (r *Registry) Register(desc string, f interface{}) {
-	if reflect.TypeOf(f).Kind() != reflect.Func {
+	if r.typeHandlers == nil {
+		r.initTypes()
+	}
+
+	t := reflect.TypeOf(f)
+	if t.Kind() != reflect.Func {
 		panic("f must be a function")
 	}
 	args := strings.Split(desc, " ")
@@ -68,11 +75,51 @@ func (r *Registry) Register(desc string, f interface{}) {
 	}
 
 	current := r.root
+	pos := 0
+main:
 	for _, arg := range args {
 		if arg[0] == '%' {
-			panic("Unsupported op")
+			// Make sure the function can actually handle this
+			offset := 1 + r.ExtraParameters + pos
+			if offset >= t.NumIn() {
+				panic("not enough parameters for function")
+			}
+			pos++
+			arg = arg[1:]
+			// Get the handler
+			aT := t.In(offset)
+			handler, ok := r.typeHandlers[aT]
+			if !ok {
+				panic(fmt.Errorf("no handler for %s", aT))
+			}
+			data := handler.DefineType(arg)
+
+			// Check for an existing entry
+			for _, info := range current.types {
+				if info.handler != handler {
+					continue
+				}
+				if handler.Equals(data, info.data) {
+					current = info.node
+					continue main
+				}
+			}
+
+			info := typeInfo{
+				handler: handler,
+				data:    data,
+				node: &commandNode{
+					childNodes: map[string]*commandNode{},
+				},
+			}
+			current.types = append(current.types, info)
+			current = info.node
+			continue
 		}
 		current = current.subNode(arg)
+	}
+	if 1+r.ExtraParameters+pos != t.NumIn() {
+		panic("too many parameters for function")
 	}
 
 	if current.f != nil {
@@ -116,20 +163,9 @@ func (r *Registry) Execute(caller interface{}, cmd string, extra ...interface{})
 		}
 	}
 
-	// Currently we just start at the root node and work our
-	// way through until we hit our command or a dead end.
-	// When complex commands are supported this will have to
-	// change to support rewinding
-	current := r.root
-	pos := 0
-	for pos < len(parts) {
-		part := parts[pos]
-		if cn, ok := current.childNodes[strings.ToLower(part)]; ok {
-			current = cn
-			pos++
-		} else {
-			return ErrCommandNotFound
-		}
+	current, vals, err := r.exec(r.root, parts)
+	if err != nil {
+		return err
 	}
 
 	// Its possible to reach a node which doesn't have
@@ -139,11 +175,12 @@ func (r *Registry) Execute(caller interface{}, cmd string, extra ...interface{})
 		// No checks are preformed on the function here
 		// as they should have been checked in Register
 		f := reflect.ValueOf(current.f)
-		args := make([]reflect.Value, 1+r.ExtraParameters)
+		args := make([]reflect.Value, 1+r.ExtraParameters+len(vals))
 		args[0] = reflect.ValueOf(caller)
 		for i, e := range extra {
 			args[1+i] = reflect.ValueOf(e)
 		}
+		copy(args[1+r.ExtraParameters:], vals)
 		f.Call(args)
 		return nil
 	}
@@ -151,9 +188,48 @@ func (r *Registry) Execute(caller interface{}, cmd string, extra ...interface{})
 	return ErrCommandNotFound
 }
 
+func (r *Registry) exec(node *commandNode, args []string, vals ...reflect.Value) (*commandNode, []reflect.Value, error) {
+	if len(args) == 0 {
+		return node, vals, nil
+	}
+	part := args[0]
+
+	// Try types first
+	var err error
+
+	for _, info := range node.types {
+		var a interface{}
+		a, err = info.handler.ParseType(part, info.data)
+		if err == nil {
+			var cn *commandNode
+			var v []reflect.Value
+			cn, v, err = r.exec(info.node, args[1:], append(vals, reflect.ValueOf(a))...)
+			if err == nil {
+				return cn, v, nil
+			}
+		}
+	}
+
+	if cn, ok := node.childNodes[strings.ToLower(part)]; ok {
+		return r.exec(cn, args[1:], vals...)
+	} else {
+		if err == nil {
+			err = ErrCommandNotFound
+		}
+		return nil, vals, err
+	}
+}
+
 type commandNode struct {
 	childNodes map[string]*commandNode
+	types      []typeInfo
 	f          interface{}
+}
+
+type typeInfo struct {
+	handler TypeHandler
+	data    interface{}
+	node    *commandNode
 }
 
 func (cn *commandNode) subNode(name string) *commandNode {
