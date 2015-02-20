@@ -212,12 +212,11 @@ func (r *Registry) exec(node *commandNode, args []string, vals ...reflect.Value)
 
 	if cn, ok := node.childNodes[strings.ToLower(part)]; ok {
 		return r.exec(cn, args[1:], vals...)
-	} else {
-		if err == nil {
-			err = ErrCommandNotFound
-		}
-		return nil, vals, err
 	}
+	if err == nil {
+		err = ErrCommandNotFound
+	}
+	return nil, vals, err
 }
 
 type commandNode struct {

@@ -22,12 +22,27 @@ import (
 	"strconv"
 )
 
+// TypeHandler handles defining and parsing dynamic arguments for
+// command.
+//
+// DefineType is called during Register where arg is the string
+// after %, the return value will be stored and passed to ParseType
+//
+// ParseType is called during execute where arg is the argument to
+// parse. info is the value original returned from DefineType.
+// This should return the parsed value.
+//
+// Equals is called on the value returned from DefineType to see if
+// the type has been defined already
 type TypeHandler interface {
 	DefineType(arg string) interface{}
 	ParseType(arg string, info interface{}) (interface{}, error)
 	Equals(a, b interface{}) bool
 }
 
+// RegisterType adds the passed type and handler to the the registry,
+// any future calls to Register will be able use the type added
+// here
 func (r *Registry) RegisterType(t reflect.Type, handler TypeHandler) {
 	if r.typeHandlers == nil {
 		r.initTypes()
