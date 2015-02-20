@@ -32,5 +32,3 @@
 // between arguments with the exception of whitespace contained
 // within quotes (") as that will be treated as a single argument
 package command
-
-// BUG(Think): Complex commands are NYI
