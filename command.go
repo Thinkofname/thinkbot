@@ -20,9 +20,16 @@ func (b *Bot) init() {
 	b.Commands.Register("join %", join)
 }
 
+var (
+	permJoin = Permission{Name: "command.join", Default: false}
+)
+
 func join(b *Bot, sender User, target, channel string) {
+	if !b.HasPermission(sender, permJoin) {
+		panic("you don't have permission for this command")
+	}
 	if len(channel) < 0 || channel[0] != '#' {
-		panic("Invalid channel")
+		panic("invalid channel")
 	}
 	b.JoinChannel(channel)
 }
