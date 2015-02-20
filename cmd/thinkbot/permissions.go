@@ -18,25 +18,39 @@ package main
 
 import (
 	"github.com/thinkofdeath/thinkbot"
+	"strings"
 )
 
 type configPermissions struct{}
 
 var _ thinkbot.PermissionContainer = configPermissions{}
 
-func (configPermissions) HasPermission(
-	b *thinkbot.Bot,
-	user thinkbot.User,
-	perm thinkbot.Permission) bool {
+func (configPermissions) HasPermission(b *thinkbot.Bot, user thinkbot.User, perm thinkbot.Permission) bool {
 	configLock.RLock()
 	defer configLock.RUnlock()
 	u, ok := config.Users[user.Host]
 	if !ok {
 		return perm.Default
 	}
-	p, ok := u.Permissions[perm.Name]
-	if !ok {
-		return perm.Default
+	name := perm.Name
+	p, ok := u.Permissions[name]
+	if ok {
+		return p
 	}
-	return p
+	for {
+		pos := strings.LastIndex(name, ".")
+		if pos == -1 {
+			p, ok := u.Permissions["*"]
+			if ok {
+				return p
+			}
+			return perm.Default
+		}
+		name = name[:pos]
+
+		p, ok := u.Permissions[name+".*"]
+		if ok {
+			return p
+		}
+	}
 }

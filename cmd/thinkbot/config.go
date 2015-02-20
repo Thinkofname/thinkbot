@@ -69,7 +69,7 @@ func initDefaults(c *botConfig) {
 	c.Users = map[string]*userConfig{
 		"oops.i.broke.thinkofdeath.co.uk": {
 			Permissions: map[string]bool{
-				"bot.admin": true,
+				"*": true,
 			},
 		},
 	}
