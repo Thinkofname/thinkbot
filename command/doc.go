@@ -28,6 +28,10 @@
 // constraints can be added after the % to gain finer control
 // over the argument.
 //
+// Built-in types:
+//     string        any string, a length limit may be added
+//                   after the % to enforce a max length
+//
 // Executing commands works by treating whitespace at delimiters
 // between arguments with the exception of whitespace contained
 // within quotes (") as that will be treated as a single argument
