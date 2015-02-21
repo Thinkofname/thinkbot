@@ -18,7 +18,6 @@ package main
 
 import (
 	"github.com/thinkofdeath/thinkbot"
-	"github.com/thinkofdeath/thinkbot/spigot"
 	"log"
 	"sync"
 	"time"
@@ -40,7 +39,7 @@ func main() {
 			config.Port,
 			config.Username,
 			func(b *thinkbot.Bot) {
-				spigot.Init(b)
+				initSpigotFeatures(b)
 				b.SetPermissionContainer(configPermissions{})
 			},
 		)
