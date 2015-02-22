@@ -23,10 +23,13 @@ import (
 
 var (
 	permJoin = thinkbot.Permission{Name: "command.join", Default: false}
+	permPart = thinkbot.Permission{Name: "command.part", Default: false}
 )
 
 func initCommands(cmd *command.Registry) {
 	cmd.Register("join %", join)
+	cmd.Register("part %", part)
+	cmd.Register("part", partCurrent)
 }
 
 func join(b *thinkbot.Bot, sender thinkbot.User, target, channel string) {
@@ -36,7 +39,25 @@ func join(b *thinkbot.Bot, sender thinkbot.User, target, channel string) {
 	if len(channel) < 0 || channel[0] != '#' {
 		panic("invalid channel")
 	}
-	configLock.RLock()
-	defer configLock.RUnlock()
 	b.JoinChannel(channel)
+}
+
+func part(b *thinkbot.Bot, sender thinkbot.User, target, channel string) {
+	if !b.HasPermission(sender, permPart) {
+		panic("you don't have permission for this command")
+	}
+	if len(channel) < 0 || channel[0] != '#' {
+		panic("invalid channel")
+	}
+	b.PartChannel(channel)
+}
+
+func partCurrent(b *thinkbot.Bot, sender thinkbot.User, target string) {
+	if !b.HasPermission(sender, permPart) {
+		panic("you don't have permission for this command")
+	}
+	if len(target) < 0 || target[0] != '#' {
+		panic("not in a channel")
+	}
+	b.PartChannel(target)
 }
