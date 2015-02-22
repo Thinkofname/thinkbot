@@ -9,6 +9,8 @@ import (
 // init
 type BotConfig struct {
 	bot *Bot
+
+	Password string
 }
 
 // SetPermissionContainer sets the container used for checking

@@ -34,6 +34,7 @@ type Bot struct {
 	client   *irc.Client
 	err      error
 	username string
+	password string
 
 	commands command.Registry
 
@@ -85,6 +86,9 @@ func NewBot(server string, port uint16, username string, init func(*BotConfig)) 
 	}
 	config := &BotConfig{bot: b}
 	init(config)
+
+	b.password = config.Password
+
 	go b.run()
 	return b, nil
 }
@@ -108,6 +112,9 @@ func (b *Bot) run() {
 
 	c.Write(irc.NewNick(b.username))
 	c.Write(irc.NewUser(b.username, b.username))
+	if b.password != "" {
+		c.Write(irc.NewPass(b.password))
+	}
 
 	for {
 		select {
