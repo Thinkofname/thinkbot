@@ -119,58 +119,77 @@ func (b *Bot) run() {
 			if !ok {
 				return
 			}
-			switch m := m.(type) {
-			case irc.Reply:
-				b.handleReply(m)
-			case irc.Ping:
-				c.Write(irc.NewPong(m.Code()))
-			case irc.Join:
-				b.channels = append(b.channels, m.Channel())
-			case irc.PrivateMessage:
-				msg := m.Message()
-				ctcp := len(msg) > 2 && msg[0] == '\x01'
-				if ctcp {
-					msg = msg[1 : len(msg)-1]
-				}
-				isCommand := strings.HasPrefix(msg, b.commandPrefix)
+			b.handleIRCMessage(m)
+		}
+	}
+}
 
-				if !isCommand {
-					b.handleMessage(parseUser(m.Sender()), m.Target(), m.Message())
-				} else {
-					go b.handleCommand(
-						parseUser(m.Sender()),
-						m.Target(),
-						m.Message()[len(b.commandPrefix):],
-					)
-				}
-			case irc.Notice:
-			// Notice
-			case irc.Mode:
-				// TODO Track others + channels
-				if m.Target() == b.username {
-					state := '#'
-					for _, r := range m.Mode() {
-						switch r {
-						case '-':
-							state = '-'
-						case '+':
-							state = '+'
-						default:
-							if state == '#' {
-								panic("Invalid mode!")
-							}
-							if state == '+' {
-								b.modes[r] = struct{}{}
-							} else {
-								delete(b.modes, r)
-							}
-						}
-					}
-				}
-			default:
-				log.Printf("Unhandled: %#v\n", m)
+func (b *Bot) handleIRCMessage(m irc.Message) {
+	c := b.client
+	switch m := m.(type) {
+	case irc.Reply:
+		b.handleReply(m)
+	case irc.Ping:
+		c.Write(irc.NewPong(m.Code()))
+	case irc.Join:
+		for _, c := range b.channels {
+			if c == m.Channel() {
+				return
 			}
 		}
+		b.channels = append(b.channels, m.Channel())
+		b.Events <- JoinChannel{Channel: m.Channel()}
+	case irc.Part:
+		for i, c := range b.channels {
+			if c == m.Channel() {
+				b.channels = append(b.channels[:i], b.channels[i+1:]...)
+				b.Events <- PartChannel{Channel: m.Channel()}
+				return
+			}
+		}
+	case irc.PrivateMessage:
+		msg := m.Message()
+		ctcp := len(msg) > 2 && msg[0] == '\x01'
+		if ctcp {
+			msg = msg[1 : len(msg)-1]
+		}
+		isCommand := strings.HasPrefix(msg, b.commandPrefix)
+
+		if !isCommand {
+			b.handleMessage(parseUser(m.Sender()), m.Target(), m.Message())
+		} else {
+			go b.handleCommand(
+				parseUser(m.Sender()),
+				m.Target(),
+				m.Message()[len(b.commandPrefix):],
+			)
+		}
+	case irc.Notice:
+		// Ignored
+	case irc.Mode:
+		// TODO Track others + channels
+		if m.Target() == b.username {
+			state := '#'
+			for _, r := range m.Mode() {
+				switch r {
+				case '-':
+					state = '-'
+				case '+':
+					state = '+'
+				default:
+					if state == '#' {
+						panic("Invalid mode!")
+					}
+					if state == '+' {
+						b.modes[r] = struct{}{}
+					} else {
+						delete(b.modes, r)
+					}
+				}
+			}
+		}
+	default:
+		log.Printf("Unhandled: %#v\n", m)
 	}
 }
 

@@ -28,3 +28,15 @@ type Stop struct{}
 // itself to be fully connected to the server
 // and ready for commands
 type Connected struct{}
+
+// JoinChannel is an event when the bot joins
+// a channel, either by command or forced
+type JoinChannel struct {
+	Channel string
+}
+
+// PartChannel is an event when the bot parts
+// a channel, either by command or forced
+type PartChannel struct {
+	Channel string
+}
