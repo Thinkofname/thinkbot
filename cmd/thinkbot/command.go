@@ -19,6 +19,7 @@ package main
 import (
 	"github.com/thinkofdeath/thinkbot"
 	"github.com/thinkofdeath/thinkbot/command"
+	"strings"
 )
 
 var (
@@ -36,5 +37,15 @@ func join(b *thinkbot.Bot, sender thinkbot.User, target, channel string) {
 	if len(channel) < 0 || channel[0] != '#' {
 		panic("invalid channel")
 	}
+	configLock.Lock()
+	defer configLock.Unlock()
+	channel = strings.ToLower(channel)
+	for _, c := range config.Channels {
+		if strings.ToLower(c) == channel {
+			return
+		}
+	}
+	config.Channels = append(config.Channels, channel)
+	saveConfig(config)
 	b.JoinChannel(channel)
 }
