@@ -191,6 +191,28 @@ func (j Join) Channel() string {
 	return j.arguments[0]
 }
 
+// Part is a message sent by the server to tell the client
+// they parted a channel. A client can send this message
+// to part a channel
+type Part struct {
+	unhandledMessage
+}
+
+// NewPart creates a Part message for the passed channel
+func NewPart(channel string) Part {
+	return Part{
+		unhandledMessage{
+			command:   "PART",
+			arguments: []string{channel},
+		},
+	}
+}
+
+// Channel returns the channel this part is for
+func (j Part) Channel() string {
+	return j.arguments[0]
+}
+
 // Mode is a message sent by the server when a user's mode is
 // changed, a channel's mode is changed or a flag on the channel
 // changed. The client can send this to change a mode on a user
