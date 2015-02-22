@@ -30,7 +30,7 @@ var (
 	bukkitVersionMatcher = regexp.MustCompile(`(?i)git-Bukkit-([0-9a-f]{7})`)
 )
 
-func initChat(b *thinkbot.Bot) {
+func initChat(b *thinkbot.BotConfig) {
 	b.AddChatHandler(spigotVersionMatcher, func(b *thinkbot.Bot, sender thinkbot.User, target, message string) error {
 		return checkSpigotVersion(b, sender, target, spigotVersionMatcher.FindStringSubmatch(message))
 	})

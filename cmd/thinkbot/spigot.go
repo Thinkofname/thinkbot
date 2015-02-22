@@ -7,6 +7,6 @@ import (
 	"github.com/thinkofdeath/thinkbot/spigot"
 )
 
-func initSpigotFeatures(b *thinkbot.Bot) {
+func initSpigotFeatures(b *thinkbot.BotConfig) {
 	spigot.Init(b)
 }

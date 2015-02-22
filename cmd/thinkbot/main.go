@@ -38,7 +38,7 @@ func main() {
 			config.Server,
 			config.Port,
 			config.Username,
-			func(b *thinkbot.Bot) {
+			func(b *thinkbot.BotConfig) {
 				initSpigotFeatures(b)
 				b.SetPermissionContainer(configPermissions{})
 			},

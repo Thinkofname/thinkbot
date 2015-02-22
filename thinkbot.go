@@ -35,7 +35,7 @@ type Bot struct {
 	err      error
 	username string
 
-	Commands command.Registry
+	commands command.Registry
 
 	chatHandlers []chatHandler
 
@@ -64,7 +64,7 @@ type chatHandler struct {
 // are handled to allow for setup
 //
 // Returns an error if it fails to connect
-func NewBot(server string, port uint16, username string, init func(*Bot)) (*Bot, error) {
+func NewBot(server string, port uint16, username string, init func(*BotConfig)) (*Bot, error) {
 	c, err := irc.NewClient(server, port)
 	if err != nil {
 		return nil, err
@@ -78,13 +78,14 @@ func NewBot(server string, port uint16, username string, init func(*Bot)) (*Bot,
 		channels:      []string{},
 		commandPrefix: "+",
 		modes:         map[rune]struct{}{},
-		Commands: command.Registry{
+		commands: command.Registry{
 			// User and target parameters
 			ExtraParameters: 2,
 		},
 	}
 	b.init()
-	init(b)
+	config := &BotConfig{bot: b}
+	init(config)
 	go b.run()
 	return b, nil
 }
@@ -197,7 +198,7 @@ func (b *Bot) handleMessage(sender User, target, message string) {
 }
 
 func (b *Bot) handleCommand(user User, target, msg string) {
-	err := b.Commands.Execute(b, msg, user, target)
+	err := b.commands.Execute(b, msg, user, target)
 	if err != nil {
 		b.Reply(user, target, err.Error())
 	}

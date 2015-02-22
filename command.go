@@ -17,7 +17,7 @@
 package thinkbot
 
 func (b *Bot) init() {
-	b.Commands.Register("join %", join)
+	b.commands.Register("join %", join)
 }
 
 var (

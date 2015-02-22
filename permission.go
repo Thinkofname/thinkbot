@@ -31,10 +31,10 @@ func (b *Bot) HasPermission(user User, perm Permission) bool {
 	return perm.Default
 }
 
-// SetPermissionContainer sets the container used for checking
+// setPermissionContainer sets the container used for checking
 // permissions for irc users. Should only be set during the
 // bot's init
-func (b *Bot) SetPermissionContainer(pc PermissionContainer) {
+func (b *Bot) setPermissionContainer(pc PermissionContainer) {
 	b.permissionContainer = pc
 }
 
