@@ -25,6 +25,7 @@ type botConfig struct {
 	Server   string                 `json:"server"`
 	Port     uint16                 `json:"port"`
 	Username string                 `json:"username"`
+	Password string                 `json:"password"`
 	Channels []string               `json:"channels"`
 	Users    map[string]*userConfig `json:"users"`
 }

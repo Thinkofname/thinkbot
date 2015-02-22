@@ -39,6 +39,7 @@ func main() {
 			config.Port,
 			config.Username,
 			func(b *thinkbot.BotConfig) {
+				b.Password = config.Password
 				initSpigotFeatures(b)
 				b.SetPermissionContainer(configPermissions{})
 				initCommands(b.Commands())
