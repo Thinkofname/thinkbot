@@ -247,6 +247,13 @@ func (b *Bot) JoinChannel(channel string) {
 	b.writeChan <- irc.NewJoin(channel)
 }
 
+// PartChannel attempts to part the target channel
+//
+// Channel names are generally prefixed with #
+func (b *Bot) PartChannel(channel string) {
+	b.writeChan <- irc.NewPart(channel)
+}
+
 // Channels returns the list of channels this bot is currently
 // connected to
 func (b *Bot) Channels() []string {
