@@ -76,6 +76,8 @@ func (c *Client) Read() (msg Message, err error) {
 		msg = Pong{m}
 	case "join":
 		msg = Join{m}
+	case "part":
+		msg = Part{m}
 	case "privmsg":
 		msg = PrivateMessage{m}
 	case "mode":
