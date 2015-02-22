@@ -24,6 +24,10 @@ import (
 	"net/http"
 )
 
+var (
+	permLatest = thinkbot.Permission{Name: "spigot.latest", Default: true}
+)
+
 func initCommands(commands *command.Registry) {
 	commands.Register("latest", latest)
 	commands.Register("latest spigot", latest)
@@ -31,6 +35,9 @@ func initCommands(commands *command.Registry) {
 }
 
 func latest(b *thinkbot.Bot, user thinkbot.User, target string) {
+	if !b.HasPermission(user, permLatest) {
+		panic("you don't have permission for this command")
+	}
 	hash, err := getCommitHash("spigot")
 	if err != nil {
 		b.Reply(user, target, fmt.Sprintf("Failed to get the latest version: %s", err))
@@ -45,6 +52,9 @@ func latest(b *thinkbot.Bot, user thinkbot.User, target string) {
 }
 
 func latestBukkit(b *thinkbot.Bot, user thinkbot.User, target string) {
+	if !b.HasPermission(user, permLatest) {
+		panic("you don't have permission for this command")
+	}
 	hash, err := getCommitHash("craftbukkit")
 	if err != nil {
 		b.Reply(user, target, fmt.Sprintf("Failed to get the latest version: %s", err))
