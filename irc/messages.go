@@ -101,6 +101,27 @@ func (u User) Realname() string {
 	return u.arguments[1]
 }
 
+// Pass is a message used to login with a password
+// to a server
+type Pass struct {
+	unhandledMessage
+}
+
+// NewPass creates a new Nick with the given nickname
+func NewPass(password string) Pass {
+	return Pass{
+		unhandledMessage{
+			command:   "PASS",
+			arguments: []string{password},
+		},
+	}
+}
+
+// Password returns the password in this Pass message
+func (n Pass) Password() string {
+	return n.arguments[0]
+}
+
 // Ping is sent by the server to check if the client is still
 // there. It should be replied to by a Pong with the same code
 type Ping struct {

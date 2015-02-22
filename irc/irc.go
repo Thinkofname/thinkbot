@@ -70,6 +70,8 @@ func (c *Client) Read() (msg Message, err error) {
 		msg = Nick{m}
 	case "user":
 		msg = User{m}
+	case "pass":
+		msg = Pass{m}
 	case "ping":
 		msg = Ping{m}
 	case "pong":
