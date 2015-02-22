@@ -41,6 +41,7 @@ func main() {
 			func(b *thinkbot.BotConfig) {
 				initSpigotFeatures(b)
 				b.SetPermissionContainer(configPermissions{})
+				initCommands(b.Commands())
 			},
 		)
 		if err != nil {

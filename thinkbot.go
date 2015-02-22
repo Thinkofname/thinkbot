@@ -83,7 +83,6 @@ func NewBot(server string, port uint16, username string, init func(*BotConfig)) 
 			ExtraParameters: 2,
 		},
 	}
-	b.init()
 	config := &BotConfig{bot: b}
 	init(config)
 	go b.run()

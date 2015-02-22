@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
-package thinkbot
+package main
 
-func (b *Bot) init() {
-	b.commands.Register("join %", join)
-}
-
-var (
-	permJoin = Permission{Name: "command.join", Default: false}
+import (
+	"github.com/thinkofdeath/thinkbot"
+	"github.com/thinkofdeath/thinkbot/command"
 )
 
-func join(b *Bot, sender User, target, channel string) {
+var (
+	permJoin = thinkbot.Permission{Name: "command.join", Default: false}
+)
+
+func initCommands(cmd *command.Registry) {
+	cmd.Register("join %", join)
+}
+
+func join(b *thinkbot.Bot, sender thinkbot.User, target, channel string) {
 	if !b.HasPermission(sender, permJoin) {
 		panic("you don't have permission for this command")
 	}
