@@ -45,7 +45,7 @@ type Bot struct {
 	funcChan  chan func()
 
 	channels      []string
-	commandPrefix string
+	commandPrefix []string
 	modes         map[rune]struct{}
 
 	permissionContainer PermissionContainer
@@ -71,23 +71,26 @@ func NewBot(server string, port uint16, username string, init func(*BotConfig)) 
 		return nil, err
 	}
 	b := &Bot{
-		client:        c,
-		Events:        make(chan Event, 100),
-		writeChan:     make(chan irc.Message, 100),
-		funcChan:      make(chan func(), 100),
-		username:      username,
-		channels:      []string{},
-		commandPrefix: "+",
-		modes:         map[rune]struct{}{},
+		client:    c,
+		Events:    make(chan Event, 100),
+		writeChan: make(chan irc.Message, 100),
+		funcChan:  make(chan func(), 100),
+		username:  username,
+		channels:  []string{},
+		modes:     map[rune]struct{}{},
 		commands: command.Registry{
 			// User and target parameters
 			ExtraParameters: 2,
 		},
 	}
-	config := &BotConfig{bot: b}
+	config := &BotConfig{
+		bot:      b,
+		Prefixes: []string{"+"},
+	}
 	init(config)
 
 	b.password = config.Password
+	b.commandPrefix = config.Prefixes
 
 	go b.run()
 	return b, nil
@@ -160,17 +163,18 @@ func (b *Bot) handleIRCMessage(m irc.Message) {
 		if ctcp {
 			msg = msg[1 : len(msg)-1]
 		}
-		isCommand := strings.HasPrefix(msg, b.commandPrefix)
-
-		if !isCommand {
-			b.handleMessage(parseUser(m.Sender()), m.Target(), m.Message())
-		} else {
-			go b.handleCommand(
-				parseUser(m.Sender()),
-				m.Target(),
-				m.Message()[len(b.commandPrefix):],
-			)
+		for _, prefix := range b.commandPrefix {
+			if strings.HasPrefix(msg, prefix) {
+				go b.handleCommand(
+					parseUser(m.Sender()),
+					m.Target(),
+					m.Message()[len(prefix):],
+				)
+				return
+			}
 		}
+
+		b.handleMessage(parseUser(m.Sender()), m.Target(), m.Message())
 	case irc.Notice:
 		// Ignored
 	case irc.Mode:
@@ -197,6 +201,32 @@ func (b *Bot) handleIRCMessage(m irc.Message) {
 		}
 	default:
 		log.Printf("Unhandled: %#v\n", m)
+	}
+}
+
+// AddCommandPrefix adds a prefix that the bot will
+// recognise as a command
+func (b *Bot) AddCommandPrefix(pre string) {
+	b.funcChan <- func() {
+		for _, p := range b.commandPrefix {
+			if p == pre {
+				return
+			}
+		}
+		b.commandPrefix = append(b.commandPrefix, pre)
+	}
+}
+
+// RemoveCommandPrefix removes a prefix that the bot will
+// recognise as a command
+func (b *Bot) RemoveCommandPrefix(pre string) {
+	b.funcChan <- func() {
+		for i, p := range b.commandPrefix {
+			if p == pre {
+				b.commandPrefix = append(b.commandPrefix[:i], b.commandPrefix[i+1:]...)
+				return
+			}
+		}
 	}
 }
 

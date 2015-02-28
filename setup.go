@@ -11,6 +11,7 @@ type BotConfig struct {
 	bot *Bot
 
 	Password string
+	Prefixes []string
 }
 
 // SetPermissionContainer sets the container used for checking
