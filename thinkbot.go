@@ -224,7 +224,7 @@ func (b *Bot) handleMessage(sender User, target, message string) {
 
 func (b *Bot) handleCommand(user User, target, msg string) {
 	err := b.commands.Execute(b, msg, user, target)
-	if err != nil {
+	if err != nil && err != command.ErrCommandNotFound {
 		b.Reply(user, target, err.Error())
 	}
 }
