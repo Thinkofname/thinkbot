@@ -71,10 +71,11 @@ func removeAutoReply(b *thinkbot.Bot, sender thinkbot.User, target, name string)
 	// Update the config
 	configLock.Lock()
 	defer configLock.Unlock()
-	_, ok := config.AutoReplies[name]
+	h, ok := config.AutoReplies[name]
 	if !ok {
 		b.Reply(sender, target, "No auto-reply with that name found")
 	} else {
+		b.RemoveChatHandler(regexp.MustCompile(h.RegExp))
 		delete(config.AutoReplies, name)
 		saveConfig(config)
 		b.Reply(sender, target, "Removed")
