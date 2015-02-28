@@ -17,14 +17,17 @@
 package main
 
 import (
+	"bytes"
 	"github.com/thinkofdeath/thinkbot"
 	"github.com/thinkofdeath/thinkbot/command"
+	"regexp"
 )
 
 var (
-	permJoin   = thinkbot.Permission{Name: "command.join", Default: false}
-	permPart   = thinkbot.Permission{Name: "command.part", Default: false}
-	permPrefix = thinkbot.Permission{Name: "command.prefix", Default: false}
+	permJoin      = thinkbot.Permission{Name: "command.join", Default: false}
+	permPart      = thinkbot.Permission{Name: "command.part", Default: false}
+	permPrefix    = thinkbot.Permission{Name: "command.prefix", Default: false}
+	permAutoReply = thinkbot.Permission{Name: "command.autoreply", Default: false}
 )
 
 func initCommands(cmd *command.Registry) {
@@ -33,6 +36,70 @@ func initCommands(cmd *command.Registry) {
 	cmd.Register("part", partCurrent)
 	cmd.Register("prefix add %", addPrefix)
 	cmd.Register("prefix remove %", removePrefix)
+	cmd.Register("autoreply add % % %", addAutoReply)
+	cmd.Register("autoreply remove %", removeAutoReply)
+	cmd.Register("autoreply", listAutoReply)
+}
+
+func autoReplyFunc(msg string) func(b *thinkbot.Bot, sender thinkbot.User, target, message string) error {
+	return func(b *thinkbot.Bot, sender thinkbot.User, target, message string) error {
+		b.Reply(sender, target, msg)
+		return nil
+	}
+}
+
+func listAutoReply(b *thinkbot.Bot, sender thinkbot.User, target string) {
+	if !b.HasPermission(sender, permAutoReply) {
+		panic("you don't have permission for this command")
+	}
+
+	configLock.RLock()
+	defer configLock.RUnlock()
+	var buf bytes.Buffer
+	for n, _ := range config.AutoReplies {
+		buf.WriteString(n)
+		buf.WriteRune(' ')
+	}
+	b.Reply(sender, target, buf.String())
+}
+
+func removeAutoReply(b *thinkbot.Bot, sender thinkbot.User, target, name string) {
+	if !b.HasPermission(sender, permAutoReply) {
+		panic("you don't have permission for this command")
+	}
+
+	// Update the config
+	configLock.Lock()
+	defer configLock.Unlock()
+	_, ok := config.AutoReplies[name]
+	if !ok {
+		b.Reply(sender, target, "No auto-reply with that name found")
+	} else {
+		delete(config.AutoReplies, name)
+		saveConfig(config)
+		b.Reply(sender, target, "Removed")
+	}
+}
+
+func addAutoReply(b *thinkbot.Bot, sender thinkbot.User, target, name, re, msg string) {
+	if !b.HasPermission(sender, permAutoReply) {
+		panic("you don't have permission for this command")
+	}
+
+	r := regexp.MustCompile(re)
+
+	// Update the config
+	configLock.Lock()
+	defer configLock.Unlock()
+	_, ok := config.AutoReplies[name]
+	if !ok {
+		b.AddChatHandler(r, autoReplyFunc(msg))
+		config.AutoReplies[name] = autoReply{re, msg}
+		saveConfig(config)
+		b.Reply(sender, target, "Added auto-reply")
+	} else {
+		b.Reply(sender, target, "A auto-reply with that name already exists")
+	}
 }
 
 func addPrefix(b *thinkbot.Bot, sender thinkbot.User, target, prefix string) {

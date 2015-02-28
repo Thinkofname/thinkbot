@@ -29,6 +29,12 @@ type botConfig struct {
 	Channels      []string               `json:"channels"`
 	Users         map[string]*userConfig `json:"users"`
 	CommandPrefix []string               `json:"command_prefix"`
+	AutoReplies   map[string]autoReply   `json:"auto_replies"`
+}
+
+type autoReply struct {
+	RegExp  string `json:"regexp"`
+	Message string `json:"message"`
 }
 
 type userConfig struct {
@@ -76,4 +82,5 @@ func initDefaults(c *botConfig) {
 		},
 	}
 	c.CommandPrefix = []string{"+"}
+	c.AutoReplies = map[string]autoReply{}
 }

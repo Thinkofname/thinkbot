@@ -19,6 +19,7 @@ package main
 import (
 	"github.com/thinkofdeath/thinkbot"
 	"log"
+	"regexp"
 	"sync"
 	"time"
 )
@@ -43,6 +44,12 @@ func main() {
 				initSpigotFeatures(b)
 				b.SetPermissionContainer(configPermissions{})
 				initCommands(b.Commands())
+
+				configLock.RLock()
+				defer configLock.RUnlock()
+				for _, ar := range config.AutoReplies {
+					b.AddChatHandler(regexp.MustCompile(ar.RegExp), autoReplyFunc(ar.Message))
+				}
 			},
 		)
 		if err != nil {
