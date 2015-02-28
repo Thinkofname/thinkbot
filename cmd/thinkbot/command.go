@@ -22,14 +22,57 @@ import (
 )
 
 var (
-	permJoin = thinkbot.Permission{Name: "command.join", Default: false}
-	permPart = thinkbot.Permission{Name: "command.part", Default: false}
+	permJoin   = thinkbot.Permission{Name: "command.join", Default: false}
+	permPart   = thinkbot.Permission{Name: "command.part", Default: false}
+	permPrefix = thinkbot.Permission{Name: "command.prefix", Default: false}
 )
 
 func initCommands(cmd *command.Registry) {
 	cmd.Register("join %", join)
 	cmd.Register("part %", part)
 	cmd.Register("part", partCurrent)
+	cmd.Register("prefix add %", addPrefix)
+	cmd.Register("prefix remove %", removePrefix)
+}
+
+func addPrefix(b *thinkbot.Bot, sender thinkbot.User, target, prefix string) {
+	if !b.HasPermission(sender, permPrefix) {
+		panic("you don't have permission for this command")
+	}
+	b.AddCommandPrefix(prefix)
+
+	// Update the config
+	configLock.Lock()
+	defer configLock.Unlock()
+	for _, p := range config.CommandPrefix {
+		if p == prefix {
+			b.Reply(sender, target, "I already know that prefix")
+			return
+		}
+	}
+	config.CommandPrefix = append(config.CommandPrefix, prefix)
+	saveConfig(config)
+	b.Reply(sender, target, "Prefix added")
+}
+
+func removePrefix(b *thinkbot.Bot, sender thinkbot.User, target, prefix string) {
+	if !b.HasPermission(sender, permPrefix) {
+		panic("you don't have permission for this command")
+	}
+	b.RemoveCommandPrefix(prefix)
+
+	// Update the config
+	configLock.Lock()
+	defer configLock.Unlock()
+	for i, p := range config.CommandPrefix {
+		if p == prefix {
+			config.CommandPrefix = append(config.CommandPrefix[:i], config.CommandPrefix[i+1:]...)
+			saveConfig(config)
+			b.Reply(sender, target, "Prefix removed")
+			return
+		}
+	}
+	b.Reply(sender, target, "Prefix not found")
 }
 
 func join(b *thinkbot.Bot, sender thinkbot.User, target, channel string) {
