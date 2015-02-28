@@ -176,7 +176,7 @@ func (b *Bot) handleIRCMessage(m irc.Message) {
 
 		b.handleMessage(parseUser(m.Sender()), m.Target(), m.Message())
 	case irc.Notice:
-		// Ignored
+	// Ignored
 	case irc.Mode:
 		// TODO Track others + channels
 		if m.Target() == b.username {
@@ -235,6 +235,20 @@ func (b *Bot) RemoveCommandPrefix(pre string) {
 func (b *Bot) AddChatHandler(r *regexp.Regexp, f chatHandlerFunc) {
 	b.funcChan <- func() {
 		b.chatHandlers = append(b.chatHandlers, chatHandler{r, f})
+	}
+}
+
+// RemoveChatHandler removes a handler which is called
+// whenever the passed regexp matches a message
+func (b *Bot) RemoveChatHandler(r *regexp.Regexp) {
+	b.funcChan <- func() {
+		re := r.String()
+		for i, c := range b.chatHandlers {
+			if c.r.String() == re {
+				b.chatHandlers = append(b.chatHandlers[:i], b.chatHandlers[i+1:]...)
+				return
+			}
+		}
 	}
 }
 
